@@ -25,25 +25,55 @@ router.get('/stats', function(req, res) {
 });
 
 router.get('/cards', function(req, res) {
-  var validColors = ['White','Blue','Green','Red','Black'];
-  var filteredCards = [];
+  var validColors = ['W','U','G','R','B','C'];
+  var filteredCards = allData;
   var color = req.query.color;
   var type = req.query.type;
+  var subType = req.query.subtype;
+  var cmc = req.query.cmc;
 
   // Card Color
   if (color) {
     if (validColors.indexOf(color) === -1) {
       return res.end('Invalid color');
     }
-    filteredCards = _.filter(allData, c => 'colors' in c && c.colors.indexOf(color) !== -1);
+    filteredCards = _.filter(filteredCards, c => {
+      if ('colorIdentity' in c) {
+        // card has a color
+        return c.colorIdentity.indexOf(color) !== -1;
+      } else if (color === 'C') {
+        // colorless card
+        return true;
+      }
+
+      return false;
+    });
   }
   
   // Card Type
   if (type) {
-    filteredCards = _.filter(allData, c => 'types' in c && c.types.indexOf(type) !== -1);
+    filteredCards = _.filter(filteredCards, c => 'types' in c && c.types.indexOf(type) !== -1);
   }
 
-  res.json({ color: color, type: type, count: filteredCards.length, data: filteredCards });
+  // Card Subtype. e.g. Dragon
+  if (subType) {
+    filteredCards = _.filter(filteredCards, c => 'subtypes' in c && c.subtypes.indexOf(subType) !== -1);
+  }
+
+  // Converted Mana Cost
+  if (cmc) {
+    cmc = parseInt(cmc, 10);
+    filteredCards = _.filter(filteredCards, c => 'cmc' in c && c.cmc === cmc);
+  }
+
+  res.json({
+    color: color,
+    type: type,
+    subType: subType,
+    cmc: cmc,
+    count: filteredCards.length,
+    data: filteredCards
+  });
 });
 
 // REGISTER OUR ROUTES -------------------------------
