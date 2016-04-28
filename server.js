@@ -1,7 +1,10 @@
 var express = require('express');
 var _ = require('lodash');
+var moment = require('moment');
 var app = express();
-var allData = require('./data/AllCards.json');
+
+var allCards = require('./data/AllCards-x.json');
+var allSets = require('./data/SetList.json');
 
 app.use(express.static('.')); // important that this comes after rewrite middleware
 
@@ -18,7 +21,7 @@ router.get('/', function(req, res) {
 
 router.get('/stats', function(req, res) {
   var i = 0;
-  for (var key in allData) {
+  for (var key in allCards) {
     i++;
   }
   res.json({ total: i });   
@@ -26,7 +29,7 @@ router.get('/stats', function(req, res) {
 
 router.get('/cards', function(req, res) {
   var validColors = ['W','U','G','R','B','C'];
-  var filteredCards = allData;
+  var filteredCards = allCards;
   var color = req.query.color;
   var type = req.query.type;
   var subType = req.query.subtype;
@@ -66,14 +69,31 @@ router.get('/cards', function(req, res) {
     filteredCards = _.filter(filteredCards, c => 'cmc' in c && c.cmc === cmc);
   }
 
+  // map to set
+  filteredCards = _.map(filteredCards, c => {
+    if ('printings' in c) {
+      var firstSet = c.printings[0];
+      c.firstPrinted = moment(_.find(allSets, { code: firstSet }).releaseDate, 'YYYY-MM-DD').format();
+    }
+    
+    // prune some heavy properties
+    delete c['rulings'];
+    delete c['legalities'];
+
+    return c;
+  });
+  
   res.json({
-    color: color,
-    type: type,
-    subType: subType,
-    cmc: cmc,
+    request: {
+      color: color,
+      type: type,
+      subType: subType,
+      cmc: cmc
+    },
     count: filteredCards.length,
     data: filteredCards
   });
+
 });
 
 // REGISTER OUR ROUTES -------------------------------
