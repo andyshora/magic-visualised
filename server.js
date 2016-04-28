@@ -73,7 +73,7 @@ router.get('/cards', function(req, res) {
   filteredCards = _.map(filteredCards, c => {
     if ('printings' in c) {
       var firstSet = c.printings[0];
-      c.firstPrinted = moment(_.find(allSets, { code: firstSet }).releaseDate, 'YYYY-MM-DD').format();
+      c.firstPrinted = parseInt(moment(_.find(allSets, { code: firstSet }).releaseDate, 'YYYY-MM-DD').format('x'), 10);
     }
     
     // prune some heavy properties
@@ -91,7 +91,7 @@ router.get('/cards', function(req, res) {
       cmc: cmc
     },
     count: filteredCards.length,
-    data: filteredCards
+    data: _.orderBy(filteredCards, 'firstPrinted')
   });
 
 });
